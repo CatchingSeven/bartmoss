@@ -30,3 +30,4 @@ docs/Bartmoss-architecture.svg
 docs/Bartmoss-requirements.md
 docs/Bartmoss-DMCD.svg
 docs/checklist.md
+doc/Jackson-record-serialization-investigation.md
