@@ -69,7 +69,7 @@ public class PcapMapper {
             fragmentOffset = (int) ipv4Header.getFragmentOffset();
             moreFragments = ipv4Header.getMoreFragmentFlag();
         }
-        else if (ipVersion == 6){
+        else {
             IpV6Packet.IpV6Header ipv6Header = (IpV6Packet.IpV6Header) header;
 
             ttlOrHopLimit = ipv6Header.getHopLimitAsInt();
