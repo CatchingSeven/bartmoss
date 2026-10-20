@@ -1,23 +1,26 @@
 package io.github.catchingseven.bartmoss.domain;
 
-public class Packet {
+import java.time.Instant;
+
+public class CapturedPacket {
 
     private int packetNumber;
-    private int timestamp;
+    private Instant timestamp;
     private int capturedLength;
     private int originalLength;
     private int ipVersion;
     private String sourceIpAddress;
     private String destinationIpAddress;
     private IpProtocol ipProtocol;
+    private ProtocolDetails protocolDetails;
     private int ttlOrHopLimit;
     /*these bottom three aren't high priority right now*/
     private Long fragementIdentification;
     private Integer fragmentOffset;
     private Boolean moreFragments;
 
-    public Packet (int packetNumber, int timestamp, int capturedLength, int originalLength, int ipVersion, 
-                    String sourceIpAddress, String destinationIpAddress, IpProtocol ipProtocol, int ttlOrHopLimit, Long fragementIdentification, Integer fragmentOffset, Boolean moreFragments){
+    public CapturedPacket (int packetNumber, Instant timestamp, int capturedLength, int originalLength, int ipVersion, 
+                    String sourceIpAddress, String destinationIpAddress, IpProtocol ipProtocol, ProtocolDetails protocolDetails, int ttlOrHopLimit, Long fragementIdentification, Integer fragmentOffset, Boolean moreFragments){
     this.packetNumber = packetNumber;
     this.timestamp = timestamp;
     this.capturedLength = capturedLength;
@@ -26,6 +29,7 @@ public class Packet {
     this.sourceIpAddress = sourceIpAddress;
     this.destinationIpAddress = destinationIpAddress;
     this.ipProtocol = ipProtocol;
+    this.protocolDetails = protocolDetails;
     this.ttlOrHopLimit = ttlOrHopLimit;
     this.fragementIdentification = fragementIdentification;
     this.fragmentOffset = fragmentOffset;
@@ -42,11 +46,11 @@ public class Packet {
         return packetNumber;
     }
 
-    public int getTimestamp(){
+    public Instant getTimestamp(){
         return timestamp;
     }
 
-    public void setTimestamp(int timestamp){
+    public void setTimestamp(Instant timestamp){
         this.timestamp = timestamp;
     }
 

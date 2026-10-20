@@ -12,7 +12,7 @@ class PacketTest {
 
     @Test
     void constructorAndSettersExposePacketMetadata() {
-        Packet packet = new Packet(12, 1_729_400_000, 128, 140, 4,
+        CapturedPacket packet = new CapturedPacket(12, 1_729_400_000, 128, 140, 4,
                 "192.0.2.10", "198.51.100.20", IpProtocol.TCP,
                 63, 65_000L, 2, true);
 
@@ -60,7 +60,7 @@ class PacketTest {
 
     @Test
     void permitsAbsentFragmentMetadata() {
-        Packet packet = new Packet(1, 0, 60, 60, 4,
+        CapturedPacket packet = new CapturedPacket(1, 0, 60, 60, 4,
                 "192.0.2.1", "198.51.100.1", IpProtocol.UDP, 64,
                 null, null, null);
 
