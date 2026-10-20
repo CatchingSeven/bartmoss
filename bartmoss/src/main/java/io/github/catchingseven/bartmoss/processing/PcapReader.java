@@ -19,11 +19,13 @@ Application passes that Capture to CaptureJsonSerializer.
 Application receives the JSON and coordinates Persistence and Integration.*/
 public class PcapReader {
     private PcapMapper mapper;
+    private Capture capture;
     
 
     public Capture readFromFile(String filePath) throws EOFException, TimeoutException, NotOpenException{
         PcapHandle handle;
-        Capture capture = new Capture(0, "", null);
+        mapper = new PcapMapper();
+        capture = new Capture(0, "", null);
         try {
             handle = Pcaps.openOffline(filePath);
             // fill in capture details
@@ -50,6 +52,8 @@ public class PcapReader {
                 
             }
             
+           } catch (EOFException e){
+
            } finally {
             handle.close();
            }
@@ -64,6 +68,10 @@ public class PcapReader {
         
         
         
+        return capture;
+    }
+
+    public Capture getCapture(){
         return capture;
     }
 
@@ -83,7 +91,7 @@ public class PcapReader {
             return FileFormat.PCAPNG;
         }
         else if (name.endsWith(".pcap")) {
-            return FileFormat.PCAPNG;
+            return FileFormat.PCAP;
         }
 
         return null;
