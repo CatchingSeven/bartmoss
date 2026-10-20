@@ -4,21 +4,23 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 class PacketTest {
 
     @Test
     void constructorAndSettersExposePacketMetadata() {
-        Packet packet = new Packet(12, 1_729_400_000, 128, 140, 4,
+        Instant timestamp = Instant.parse("2026-10-20T01:02:03.123456789Z");
+        TcpDetails details = new TcpDetails(12345, 443, 1L, 2L, java.util.Set.of(TcpFlag.SYN), 8192);
+        CapturedPacket packet = new CapturedPacket(12, timestamp, 128, 140, 4,
                 "192.0.2.10", "198.51.100.20", IpProtocol.TCP,
-                63, 65_000L, 2, true);
+                details, 63, 65_000L, 2, true);
 
         assertAll("constructor values",
                 () -> assertEquals(12, packet.getPacketNumber()),
-                () -> assertEquals(1_729_400_000, packet.getTimestamp()),
+                () -> assertEquals(timestamp, packet.getTimestamp()),
                 () -> assertEquals(128, packet.getCapturedLength()),
                 () -> assertEquals(140, packet.getOriginalLength()),
                 () -> assertEquals(4, packet.getIpVersion()),
@@ -31,7 +33,8 @@ class PacketTest {
                 () -> assertEquals(Boolean.TRUE, packet.getMoreFragments()));
 
         packet.setPacketNumber(13);
-        packet.setTimestamp(1_729_400_001);
+        Instant updatedTimestamp = timestamp.plusNanos(1);
+        packet.setTimestamp(updatedTimestamp);
         packet.setCapturedLength(96);
         packet.setOriginalLength(100);
         packet.setIpVersion(6);
@@ -45,7 +48,7 @@ class PacketTest {
 
         assertAll("updated values",
                 () -> assertEquals(13, packet.getPacketNumber()),
-                () -> assertEquals(1_729_400_001, packet.getTimestamp()),
+                () -> assertEquals(updatedTimestamp, packet.getTimestamp()),
                 () -> assertEquals(96, packet.getCapturedLength()),
                 () -> assertEquals(100, packet.getOriginalLength()),
                 () -> assertEquals(6, packet.getIpVersion()),
@@ -60,8 +63,8 @@ class PacketTest {
 
     @Test
     void permitsAbsentFragmentMetadata() {
-        Packet packet = new Packet(1, 0, 60, 60, 4,
-                "192.0.2.1", "198.51.100.1", IpProtocol.UDP, 64,
+        CapturedPacket packet = new CapturedPacket(1, Instant.EPOCH, 60, 60, 4,
+                "192.0.2.1", "198.51.100.1", IpProtocol.UDP, new UdpDetails(53, 53000, 40), 64,
                 null, null, null);
 
         assertNull(packet.getFragementIdentification());

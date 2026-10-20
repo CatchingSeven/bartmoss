@@ -26,9 +26,10 @@ class CaptureTest {
     @Test
     void settersReplaceCaptureDataAndCollections() {
         Capture capture = new Capture(3, "sample.pcap", FileFormat.PCAP);
-        Packet packet = new Packet(1, 100, 64, 64, 4, "192.0.2.1", "198.51.100.2",
-                IpProtocol.UDP, 64, null, null, null);
-        List<Packet> packets = List.of(packet);
+        CapturedPacket packet = new CapturedPacket(1, Instant.ofEpochSecond(100), 64, 64, 4,
+                "192.0.2.1", "198.51.100.2", IpProtocol.UDP,
+                new UdpDetails(53000, 53, 44), 64, null, null, null);
+        List<CapturedPacket> packets = List.of(packet);
         AnalysisResult result = new AnalysisResult(1, Instant.parse("2026-10-20T01:02:03Z"), "model", "response");
         List<AnalysisResult> analyses = List.of(result);
 

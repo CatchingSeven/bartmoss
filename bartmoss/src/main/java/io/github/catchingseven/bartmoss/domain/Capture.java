@@ -7,7 +7,7 @@ public class Capture {
     private int captureId;
     private String sourceFileName;
     private FileFormat fileFormat;
-    private List<Packet> packets;
+    private List<CapturedPacket> packets;
     private List<AnalysisResult> analysisResults;
 
     public Capture(int captureId, String sourceFileName, FileFormat fileFormat){
@@ -42,11 +42,11 @@ public class Capture {
         this.fileFormat = fileFormat;
     }
 
-    public List<Packet> getPackets(){
+    public List<CapturedPacket> getPackets(){
         return packets;
     }
 
-    public void setPackets(List<Packet> packets){
+    public void setPackets(List<CapturedPacket> packets){
         this.packets = packets;
     }
 
