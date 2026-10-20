@@ -11,6 +11,7 @@ public class Packet {
     private String destinationIpAddress;
     private IpProtocol ipProtocol;
     private int ttlOrHopLimit;
+    /*these bottom three aren't high priority right now*/
     private Long fragementIdentification;
     private Integer fragmentOffset;
     private Boolean moreFragments;
