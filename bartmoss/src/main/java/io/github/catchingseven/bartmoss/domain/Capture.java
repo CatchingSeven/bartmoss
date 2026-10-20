@@ -8,6 +8,7 @@ public class Capture {
     private String sourceFileName;
     private FileFormat fileFormat;
     private List<Packet> packets;
+    private List<AnalysisResult> analysisResults;
 
     public Capture(int captureId, String sourceFileName, FileFormat fileFormat){
         this.captureId = captureId;
@@ -47,6 +48,14 @@ public class Capture {
 
     public void setPackets(List<Packet> packets){
         this.packets = packets;
+    }
+
+    public List<AnalysisResult> getAnalysisResults(){
+        return analysisResults;
+    }
+
+    public void setAnalysisResults(List<AnalysisResult> analysisResults){
+        this.analysisResults = analysisResults;
     }
     
 }
