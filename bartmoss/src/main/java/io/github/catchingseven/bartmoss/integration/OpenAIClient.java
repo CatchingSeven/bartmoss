@@ -18,7 +18,7 @@ public class OpenAIClient {
 
     public void requestResponse(String json) {
         ResponseCreateParams params = ResponseCreateParams.builder().model("gpt-6-luna")
-                .input("Reply with: Bartmoss connected").build();
+                .input("Analyse the network traffic, provide a detailed analysis in your response: " + json).build();
         Response response = client.responses().create(params);
 
         response.output().stream().flatMap(item -> item.message().stream())

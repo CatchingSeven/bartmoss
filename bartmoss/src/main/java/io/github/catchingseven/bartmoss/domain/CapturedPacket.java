@@ -14,130 +14,132 @@ public class CapturedPacket {
     private IpProtocol ipProtocol;
     private ProtocolDetails protocolDetails;
     private int ttlOrHopLimit;
-    /*these bottom three aren't high priority right now*/
+    /* these bottom three aren't high priority right now */
     private Long fragementIdentification;
     private Integer fragmentOffset;
     private Boolean moreFragments;
 
-    public CapturedPacket (int packetNumber, Instant timestamp, int capturedLength, int originalLength, int ipVersion, 
-                    String sourceIpAddress, String destinationIpAddress, IpProtocol ipProtocol, ProtocolDetails protocolDetails, int ttlOrHopLimit, Long fragementIdentification, Integer fragmentOffset, Boolean moreFragments){
-    this.packetNumber = packetNumber;
-    this.timestamp = timestamp;
-    this.capturedLength = capturedLength;
-    this.originalLength = originalLength;
-    this.ipVersion = ipVersion;
-    this.sourceIpAddress = sourceIpAddress;
-    this.destinationIpAddress = destinationIpAddress;
-    this.ipProtocol = ipProtocol;
-    this.protocolDetails = protocolDetails;
-    this.ttlOrHopLimit = ttlOrHopLimit;
-    this.fragementIdentification = fragementIdentification;
-    this.fragmentOffset = fragmentOffset;
-    this.moreFragments = moreFragments;
-
+    public CapturedPacket(int packetNumber, Instant timestamp, int capturedLength, int originalLength, int ipVersion,
+            String sourceIpAddress, String destinationIpAddress, IpProtocol ipProtocol, ProtocolDetails protocolDetails,
+            int ttlOrHopLimit, Long fragementIdentification, Integer fragmentOffset, Boolean moreFragments) {
+        this.packetNumber = packetNumber;
+        this.timestamp = timestamp;
+        this.capturedLength = capturedLength;
+        this.originalLength = originalLength;
+        this.ipVersion = ipVersion;
+        this.sourceIpAddress = sourceIpAddress;
+        this.destinationIpAddress = destinationIpAddress;
+        this.ipProtocol = ipProtocol;
+        this.protocolDetails = protocolDetails;
+        this.ttlOrHopLimit = ttlOrHopLimit;
+        this.fragementIdentification = fragementIdentification;
+        this.fragmentOffset = fragmentOffset;
+        this.moreFragments = moreFragments;
 
     }
 
-    public void setPacketNumber(int packetNumber){
+    public ProtocolDetails getProtocolDetails() {
+        return protocolDetails;
+    }
+
+    public void setProtocolDetails(ProtocolDetails protocolDetails) {
+        this.protocolDetails = protocolDetails;
+    }
+
+    public void setPacketNumber(int packetNumber) {
         this.packetNumber = packetNumber;
     }
 
-    public int getPacketNumber(){
+    public int getPacketNumber() {
         return packetNumber;
     }
 
-    public Instant getTimestamp(){
+    public Instant getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(Instant timestamp){
+    public void setTimestamp(Instant timestamp) {
         this.timestamp = timestamp;
     }
 
-    public int getCapturedLength(){
+    public int getCapturedLength() {
         return capturedLength;
     }
 
-    public void setCapturedLength(int capturedLength){
+    public void setCapturedLength(int capturedLength) {
         this.capturedLength = capturedLength;
     }
 
-    public int getOriginalLength(){
+    public int getOriginalLength() {
         return originalLength;
     }
 
-    public void setOriginalLength(int originalLength){
+    public void setOriginalLength(int originalLength) {
         this.originalLength = originalLength;
     }
 
-    public int getIpVersion(){
+    public int getIpVersion() {
         return ipVersion;
     }
 
-    public void setIpVersion(int ipVersion){
+    public void setIpVersion(int ipVersion) {
         this.ipVersion = ipVersion;
     }
 
-    public String getSourceIpAddress(){
+    public String getSourceIpAddress() {
         return sourceIpAddress;
     }
 
-    public void setSourceIpAddress(String sourceIpAddress){
+    public void setSourceIpAddress(String sourceIpAddress) {
         this.sourceIpAddress = sourceIpAddress;
     }
 
-    public String getDestinationIpAddress(){
+    public String getDestinationIpAddress() {
         return destinationIpAddress;
     }
 
-    public void setDestinationIpAddress(String destinationIpAddress){
+    public void setDestinationIpAddress(String destinationIpAddress) {
         this.destinationIpAddress = destinationIpAddress;
     }
 
-    public IpProtocol getIpProtocol(){
+    public IpProtocol getIpProtocol() {
         return ipProtocol;
     }
 
-    public void setIpProtocol(IpProtocol ipProtocol){
+    public void setIpProtocol(IpProtocol ipProtocol) {
         this.ipProtocol = ipProtocol;
     }
 
-
-
-
-    public int getTtlOrHopLimit(){
+    public int getTtlOrHopLimit() {
         return ttlOrHopLimit;
     }
 
-    public void setTtlOrHopLimit(int ttlOrHopLimit){
+    public void setTtlOrHopLimit(int ttlOrHopLimit) {
         this.ttlOrHopLimit = ttlOrHopLimit;
     }
 
-    public Long getFragementIdentification(){
+    public Long getFragementIdentification() {
         return fragementIdentification;
     }
 
-    public void setFragementIdentification(Long fragementIdentification){
+    public void setFragementIdentification(Long fragementIdentification) {
         this.fragementIdentification = fragementIdentification;
     }
 
-    public Integer getFragmentOffset(){
+    public Integer getFragmentOffset() {
         return fragmentOffset;
     }
 
-    public void setFragmentOffset(Integer fragmentOffset){
+    public void setFragmentOffset(Integer fragmentOffset) {
         this.fragmentOffset = fragmentOffset;
     }
 
-    public Boolean getMoreFragments(){
+    public Boolean getMoreFragments() {
         return moreFragments;
     }
 
-    public void setMoreFragments(Boolean moreFragments){
+    public void setMoreFragments(Boolean moreFragments) {
         this.moreFragments = moreFragments;
     }
 
-
-
-    
 }
