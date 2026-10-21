@@ -1,6 +1,7 @@
 package io.github.catchingseven.bartmoss.application;
 
 import java.io.EOFException;
+import java.util.ArrayList;
 import java.util.concurrent.StructuredTaskScope.TimeoutException;
 
 import org.pcap4j.core.NotOpenException;
@@ -31,8 +32,8 @@ public class Application {
 
     }
 
-    public void requestResponse() { // wrapper for OpenAIClient requestResponse method
-        openAIClient.requestResponse(json);
+    public ArrayList<String> requestResponse() { // wrapper for OpenAIClient requestResponse method
+        return openAIClient.requestResponse(json);
     }
 
 }
