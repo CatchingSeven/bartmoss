@@ -45,7 +45,7 @@ public class MainController {
         try {
             application.handleUpload(selectedFilePath);
             ArrayList<String> response = application.requestResponse();
-            modelResponseTextArea.setText(String.join("\n\n", response));
+            modelResponseTextArea.setText(String.join("\n", response));
             exportButton.setDisable(false);
         } catch (Exception e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
