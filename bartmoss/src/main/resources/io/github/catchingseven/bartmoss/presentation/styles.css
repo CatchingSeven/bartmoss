@@ -1,0 +1,26 @@
+.root {
+    -fx-background-color: #151b28;
+    -fx-padding: 20;
+    -fx-spacing: 10;
+}
+
+.label {
+    -fx-text-fill: white;
+}
+
+.button {
+    -fx-background-color: #3c516f;
+    -fx-text-fill: white;
+    -fx-padding: 10;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #677b97;
+}
+
+.text-field, .text-area, .text-area .content {
+    -fx-control-inner-background: #232d3f;
+    -fx-background-color: #232d3f;
+    -fx-text-fill: white;
+}
