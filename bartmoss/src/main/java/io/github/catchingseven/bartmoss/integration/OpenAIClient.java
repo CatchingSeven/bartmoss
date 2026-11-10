@@ -28,7 +28,8 @@ public class OpenAIClient {
 
         try {
             ResponseCreateParams params = ResponseCreateParams.builder().model("gpt-6-luna")
-                    .input("Analyse the network traffic, provide a detailed analysis in your response: " + json)
+                    .input("Respond in plain text only. Do not use Markdown. Analyse the network traffic, provide a detailed analysis in your response: "
+                            + json)
                     .build();
 
             Response response = client.responses().create(params);
