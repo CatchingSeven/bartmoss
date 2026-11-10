@@ -10,6 +10,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.stage.FileChooser;
 import javafx.scene.control.Alert;
+import javafx.concurrent.Task;
 import io.github.catchingseven.bartmoss.application.*;
 
 public class MainController {
@@ -42,19 +43,41 @@ public class MainController {
 
     @FXML
     private void handleAnalyse() {
-        try {
-            application.handleUpload(selectedFilePath);
-            ArrayList<String> response = application.requestResponse();
+
+        Task<ArrayList<String>> task = new Task<ArrayList<String>>() {
+
+            @Override
+            protected ArrayList<String> call() throws Exception {
+                application.handleUpload(selectedFilePath);
+                analyseButton.setDisable(true);
+                return application.requestResponse();
+
+            }
+        };
+
+        task.setOnSucceeded(event -> {
+            ArrayList<String> response = task.getValue();
             modelResponseTextArea.setText(String.join("\n", response));
+            analyseButton.setDisable(false);
             exportButton.setDisable(false);
-        } catch (Exception e) {
+
+        });
+
+        task.setOnFailed(event -> {
+
+            Throwable e = task.getException();
+
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Analysis Failed!");
             alert.setHeaderText("Unable to Analyse capture");
             alert.setContentText(e.getMessage());
             alert.showAndWait();
+            analyseButton.setDisable(false);
 
-        }
+        });
+
+        Thread thread = new Thread(task);
+        thread.start();
 
     }
 
