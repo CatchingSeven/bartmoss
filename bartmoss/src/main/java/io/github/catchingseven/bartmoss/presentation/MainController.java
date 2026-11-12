@@ -3,6 +3,7 @@ package io.github.catchingseven.bartmoss.presentation;
 import java.io.File;
 import java.util.ArrayList;
 
+import ch.qos.logback.core.model.Model;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -83,6 +84,24 @@ public class MainController {
 
     @FXML
     private void handleExport() {
+
+        try {
+
+            application.handleExport(modelResponseTextArea.getText());
+            exportButton.setDisable(true);
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Export Failed");
+            alert.setHeaderText("Successfully Exported to: bartmoss\\exports\\");
+            alert.showAndWait();
+
+        } catch (Exception e) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Export Failed");
+            alert.setHeaderText("Unable to export json and response");
+            alert.setContentText(e.getMessage());
+            alert.showAndWait();
+
+        }
 
     }
 

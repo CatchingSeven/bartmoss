@@ -1,6 +1,8 @@
 package io.github.catchingseven.bartmoss.application;
 
 import java.io.EOFException;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.concurrent.StructuredTaskScope.TimeoutException;
 
@@ -9,7 +11,7 @@ import org.pcap4j.core.NotOpenException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.github.catchingseven.bartmoss.integration.OpenAIClient;
-
+import io.github.catchingseven.bartmoss.persistence.FileExporter;
 import io.github.catchingseven.bartmoss.processing.PacketJsonConverter;
 import io.github.catchingseven.bartmoss.processing.PcapReader;
 
@@ -17,12 +19,14 @@ public class Application {
     private OpenAIClient openAIClient;
     private PcapReader reader;
     private PacketJsonConverter converter;
+    private FileExporter exporter;
     private String json;
 
     public Application() {
         openAIClient = new OpenAIClient();
         reader = new PcapReader();
         converter = new PacketJsonConverter();
+        exporter = new FileExporter();
     }
 
     public void handleUpload(String pathToFile)
@@ -34,6 +38,12 @@ public class Application {
 
     public ArrayList<String> requestResponse() { // wrapper for OpenAIClient requestResponse method
         return openAIClient.requestResponse(json);
+    }
+
+    public void handleExport(String response) throws IOException {
+        exporter.exportJson(json);
+        exporter.exportModelResponse(response);
+
     }
 
 }
