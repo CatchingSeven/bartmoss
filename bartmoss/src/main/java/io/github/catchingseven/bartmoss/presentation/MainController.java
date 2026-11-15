@@ -45,12 +45,13 @@ public class MainController {
     @FXML
     private void handleAnalyse() {
 
+        analyseButton.setDisable(true);
+
         Task<ArrayList<String>> task = new Task<ArrayList<String>>() {
 
             @Override
             protected ArrayList<String> call() throws Exception {
                 application.handleUpload(selectedFilePath);
-                analyseButton.setDisable(true);
                 return application.requestResponse();
 
             }
@@ -90,7 +91,7 @@ public class MainController {
             application.handleExport(modelResponseTextArea.getText());
             exportButton.setDisable(true);
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Export Failed");
+            alert.setTitle("Export Success");
             alert.setHeaderText("Successfully Exported to: bartmoss\\exports\\");
             alert.showAndWait();
 
