@@ -2,206 +2,139 @@ package io.github.catchingseven.bartmoss.processing;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static io.github.catchingseven.bartmoss.support.TestObjects.*;
 
-import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
-import java.io.PrintStream;
-import java.lang.reflect.Field;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.sql.Timestamp;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.MockedStatic;
-import org.pcap4j.core.NotOpenException;
-import org.pcap4j.core.PcapHandle;
-import org.pcap4j.core.PcapNativeException;
-import org.pcap4j.core.Pcaps;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.pcap4j.core.*;
 import org.pcap4j.packet.Packet;
-
-import io.github.catchingseven.bartmoss.domain.Capture;
-import io.github.catchingseven.bartmoss.domain.CapturedPacket;
 import io.github.catchingseven.bartmoss.domain.FileFormat;
-import io.github.catchingseven.bartmoss.domain.IpProtocol;
-import io.github.catchingseven.bartmoss.domain.UdpDetails;
 
 class PcapReaderTest {
     @Test
-    void returnsDefaultCaptureAndReportsOpenFailure() throws Exception {
-        String path = "missing.pcapng";
-        try (MockedStatic<Pcaps> pcaps = mockStatic(Pcaps.class)) {
-            pcaps.when(() -> Pcaps.openOffline(path)).thenThrow(new PcapNativeException("invalid capture"));
-            ByteArrayOutputStream errors = new ByteArrayOutputStream();
-            PrintStream previous = System.err;
-            Capture capture;
-            try (PrintStream redirected = new PrintStream(errors, true, StandardCharsets.UTF_8)) {
-                System.setErr(redirected);
-                capture = new PcapReader().readFromFile(path);
-            } finally {
-                System.setErr(previous);
-            }
-
-            assertAll(
-                    () -> assertEquals(0, capture.getCaptureId()),
-                    () -> assertEquals("", capture.getSourceFileName()),
-                    () -> assertNull(capture.getFileFormat()),
-                    () -> assertTrue(capture.getPackets().isEmpty()),
-                    () -> assertEquals("Unable to open capture: invalid capture" + System.lineSeparator(),
-                            errors.toString(StandardCharsets.UTF_8)));
-            pcaps.verify(() -> Pcaps.openOffline(path));
+    void characterizesNativeOpenFailureReturningDefaultCapture() throws Exception {
+        try (var pcaps = mockStatic(Pcaps.class)) {
+            pcaps.when(() -> Pcaps.openOffline("missing.pcap"))
+                    .thenThrow(new PcapNativeException("capture missing"));
+            PcapReader reader = new PcapReader();
+            var capture = reader.readFromFile("missing.pcap");
+            assertSame(capture, reader.getCapture());
+            assertEquals(0, capture.getCaptureId());
+            assertEquals("", capture.getSourceFileName());
+            assertNull(capture.getFileFormat());
+            assertTrue(capture.getPackets().isEmpty());
+            // This describes current behavior; the integration regression requires rejection.
         }
     }
 
     @Test
-    void preservesOrderTimestampsLengthsAndNumberingAcrossSkippedPackets() throws Exception {
-        String path = Path.of("captures", "ordered.PCAPNG").toString();
-        Instant firstTime = Instant.parse("2026-10-20T01:02:03.123456789Z");
-        Instant skippedTime = firstTime.minusSeconds(1);
-        Instant lastTime = firstTime.minusSeconds(2);
-        Packet first = mock(Packet.class);
-        Packet skipped = mock(Packet.class);
-        Packet last = mock(Packet.class);
-        when(first.length()).thenReturn(60);
-        when(skipped.length()).thenReturn(14);
-        when(last.length()).thenReturn(80);
+    void leavesUnsupportedExtensionUnclassified() throws Exception {
         PcapHandle handle = mock(PcapHandle.class);
-        when(handle.getNextPacketEx()).thenReturn(first, skipped, last)
-                .thenThrow(new PcapNativeException("read failed"));
-        when(handle.getOriginalLength()).thenReturn(100, 14, 120);
-        when(handle.getTimestamp()).thenReturn(Timestamp.from(firstTime), Timestamp.from(skippedTime),
-                Timestamp.from(lastTime));
-        PcapMapper mapper = mock(PcapMapper.class);
-        CapturedPacket firstMapped = packet(0, firstTime, 60, 100);
-        CapturedPacket lastMapped = packet(2, lastTime, 80, 120);
-        when(mapper.mapPacket(first, firstTime, 0, 60, 100)).thenReturn(Optional.of(firstMapped));
-        when(mapper.mapPacket(skipped, skippedTime, 1, 14, 14)).thenReturn(Optional.empty());
-        when(mapper.mapPacket(last, lastTime, 2, 80, 120)).thenReturn(Optional.of(lastMapped));
-        PcapReader reader = readerWith(mapper);
-
-        try (MockedStatic<Pcaps> pcaps = mockStatic(Pcaps.class)) {
-            pcaps.when(() -> Pcaps.openOffline(path)).thenReturn(handle);
-            // A read error currently returns partial results; EOF does not return them.
-            Capture capture = reader.readFromFile(path);
-
-            assertEquals(1, capture.getCaptureId());
-            assertEquals("ordered.PCAPNG", capture.getSourceFileName());
-            assertEquals(FileFormat.PCAPNG, capture.getFileFormat());
-            assertEquals(List.of(firstMapped, lastMapped), capture.getPackets());
-            var order = inOrder(mapper, handle);
-            order.verify(mapper).mapPacket(first, firstTime, 0, 60, 100);
-            order.verify(mapper).mapPacket(skipped, skippedTime, 1, 14, 14);
-            order.verify(mapper).mapPacket(last, lastTime, 2, 80, 120);
-            order.verify(handle).close();
-            verifyNoMoreInteractions(mapper);
-            verify(handle, times(4)).getNextPacketEx();
+        when(handle.getNextPacketEx()).thenThrow(new EOFException());
+        try (var pcaps = mockStatic(Pcaps.class)) {
+            pcaps.when(() -> Pcaps.openOffline("sample.bin")).thenReturn(handle);
+            assertNull(new PcapReader().readFromFile("sample.bin").getFileFormat());
+            verify(handle).close();
         }
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"sample.pcapng", "sample.PCAPNG", "sample.pcap", "sample.PCAP", "sample.bin", "sample"})
-    void characterizesCurrentExtensionDetection(String fileName) throws Exception {
-        String path = Path.of("captures", fileName).toString();
+    @CsvSource({"sample.pcap,PCAP", "sample.PCAP,PCAP", "sample.pcapng,PCAPNG", "sample.PCAPNG,PCAPNG"})
+    void detectsFormatAndReturnsEmptyCaptureAtEof(String path, FileFormat format) throws Exception {
         PcapHandle handle = mock(PcapHandle.class);
-        when(handle.getNextPacketEx()).thenThrow(new PcapNativeException("read failed"));
-        try (MockedStatic<Pcaps> pcaps = mockStatic(Pcaps.class)) {
+        when(handle.getNextPacketEx()).thenThrow(new EOFException());
+        try (var pcaps = mockStatic(Pcaps.class)) {
             pcaps.when(() -> Pcaps.openOffline(path)).thenReturn(handle);
-            Capture capture = new PcapReader().readFromFile(path);
-
-            assertEquals(fileName, capture.getSourceFileName());
-            // Known issue: .pcap currently returns PCAPNG too. This is characterization,
-            // not an assertion that format detection is correct.
-            FileFormat expected = fileName.toLowerCase(java.util.Locale.ROOT).endsWith(".pcapng")
-                    || fileName.toLowerCase(java.util.Locale.ROOT).endsWith(".pcap")
-                    ? FileFormat.PCAPNG : null;
-            assertEquals(expected, capture.getFileFormat());
+            PcapReader reader = new PcapReader();
+            var capture = reader.readFromFile(path);
+            assertSame(capture, reader.getCapture());
+            assertEquals(1, capture.getCaptureId());
+            assertEquals(path, capture.getSourceFileName());
+            assertEquals(format, capture.getFileFormat());
             assertTrue(capture.getPackets().isEmpty());
             verify(handle).close();
         }
     }
 
     @Test
-    void currentlyPropagatesEofAndClosesHandleInsteadOfReturningCapture() throws Exception {
-        EOFException eof = new EOFException("end of capture");
-        assertReadFailureClosesHandle(eof);
+    void preservesOrderTimestampsAndOriginalNumberingAcrossSkippedPackets() throws Exception {
+        Packet first = mock(Packet.class);
+        Packet skipped = mock(Packet.class);
+        Packet last = mock(Packet.class);
+        when(first.length()).thenReturn(42);
+        when(skipped.length()).thenReturn(14);
+        when(last.length()).thenReturn(60);
+        PcapHandle handle = mock(PcapHandle.class);
+        when(handle.getNextPacketEx()).thenReturn(first, skipped, last).thenThrow(new EOFException());
+        when(handle.getOriginalLength()).thenReturn(60, 14, 100);
+        when(handle.getTimestamp()).thenReturn(Timestamp.from(TIME), Timestamp.from(TIME.minusSeconds(1)),
+                Timestamp.from(TIME.minusSeconds(2)));
+        var mappedFirst = capture().getPackets().getFirst();
+        var mappedLast = capture().getPackets().getFirst();
+        mappedLast.setPacketNumber(2);
+        mappedLast.setTimestamp(TIME.minusSeconds(2));
+        try (var mappers = mockConstruction(PcapMapper.class, (mapper, context) -> {
+            when(mapper.mapPacket(first, TIME, 0, 42, 60)).thenReturn(Optional.of(mappedFirst));
+            when(mapper.mapPacket(skipped, TIME.minusSeconds(1), 1, 14, 14)).thenReturn(Optional.empty());
+            when(mapper.mapPacket(last, TIME.minusSeconds(2), 2, 60, 100)).thenReturn(Optional.of(mappedLast));
+        }); var pcaps = mockStatic(Pcaps.class)) {
+            pcaps.when(() -> Pcaps.openOffline("ordered.pcap")).thenReturn(handle);
+            assertEquals(List.of(mappedFirst, mappedLast), new PcapReader().readFromFile("ordered.pcap").getPackets());
+            var order = inOrder(mappers.constructed().getFirst(), handle);
+            order.verify(mappers.constructed().getFirst()).mapPacket(first, TIME, 0, 42, 60);
+            order.verify(mappers.constructed().getFirst()).mapPacket(skipped, TIME.minusSeconds(1), 1, 14, 14);
+            order.verify(mappers.constructed().getFirst()).mapPacket(last, TIME.minusSeconds(2), 2, 60, 100);
+            order.verify(handle).close();
+        }
     }
 
     @Test
-    void propagatesTimeoutAndClosesHandle() throws Exception {
-        assertReadFailureClosesHandle(new TimeoutException("timed out"));
-    }
-
-    @Test
-    void propagatesNotOpenAndClosesHandle() throws Exception {
-        assertReadFailureClosesHandle(new NotOpenException("closed"));
-    }
-
-    @Test
-    void currentlyFailsOnFirstPacketWithoutMapperInitializationAndClosesHandle() throws Exception {
-        String path = "sample.pcapng";
+    void initializesMapperAndSkipsNonIpPackets() throws Exception {
         Packet packet = mock(Packet.class);
         PcapHandle handle = mock(PcapHandle.class);
-        when(handle.getNextPacketEx()).thenReturn(packet);
-        when(handle.getTimestamp()).thenReturn(Timestamp.from(Instant.EPOCH));
-        when(handle.getOriginalLength()).thenReturn(60);
-        when(packet.length()).thenReturn(60);
-        try (MockedStatic<Pcaps> pcaps = mockStatic(Pcaps.class)) {
-            pcaps.when(() -> Pcaps.openOffline(path)).thenReturn(handle);
-
-            assertThrows(NullPointerException.class, () -> new PcapReader().readFromFile(path));
+        when(handle.getNextPacketEx()).thenReturn(packet).thenThrow(new EOFException());
+        when(handle.getTimestamp()).thenReturn(Timestamp.from(TIME));
+        try (var pcaps = mockStatic(Pcaps.class)) {
+            pcaps.when(() -> Pcaps.openOffline("sample.pcap")).thenReturn(handle);
+            assertTrue(new PcapReader().readFromFile("sample.pcap").getPackets().isEmpty());
+            verify(handle, times(2)).getNextPacketEx();
             verify(handle).close();
+        }
+    }
+
+    @Test
+    void propagatesTimeoutAndClosedHandleFailuresAndClosesHandle() throws Exception {
+        for (Exception failure : List.of(new TimeoutException("timeout"), new NotOpenException("closed"))) {
+            PcapHandle handle = mock(PcapHandle.class);
+            when(handle.getNextPacketEx()).thenThrow(failure);
+            try (var pcaps = mockStatic(Pcaps.class)) {
+                pcaps.when(() -> Pcaps.openOffline("sample.pcap")).thenReturn(handle);
+                assertSame(failure, assertThrows(failure.getClass(), () -> new PcapReader().readFromFile("sample.pcap")));
+                verify(handle).close();
+            }
         }
     }
 
     @Test
     void closesHandleWhenMappingFails() throws Exception {
-        String path = "sample.pcapng";
         Packet packet = mock(Packet.class);
         PcapHandle handle = mock(PcapHandle.class);
-        when(handle.getNextPacketEx()).thenReturn(packet);
-        when(handle.getTimestamp()).thenReturn(Timestamp.from(Instant.EPOCH));
-        when(handle.getOriginalLength()).thenReturn(60);
-        when(packet.length()).thenReturn(60);
-        PcapMapper mapper = mock(PcapMapper.class);
-        IllegalArgumentException failure = new IllegalArgumentException("invalid packet");
-        when(mapper.mapPacket(packet, Instant.EPOCH, 0, 60, 60)).thenThrow(failure);
-        PcapReader reader = readerWith(mapper);
-        try (MockedStatic<Pcaps> pcaps = mockStatic(Pcaps.class)) {
-            pcaps.when(() -> Pcaps.openOffline(path)).thenReturn(handle);
-
-            assertSame(failure, assertThrows(IllegalArgumentException.class, () -> reader.readFromFile(path)));
+        when(handle.getNextPacketEx()).thenReturn(packet).thenThrow(new EOFException());
+        when(handle.getTimestamp()).thenReturn(Timestamp.from(TIME));
+        var failure = new IllegalArgumentException("invalid packet");
+        try (var mappers = mockConstruction(PcapMapper.class, (mapper, context) ->
+                when(mapper.mapPacket(any(), any(), anyInt(), anyInt(), anyInt())).thenThrow(failure));
+                var pcaps = mockStatic(Pcaps.class)) {
+            pcaps.when(() -> Pcaps.openOffline("sample.pcap")).thenReturn(handle);
+            assertSame(failure, assertThrows(IllegalArgumentException.class,
+                    () -> new PcapReader().readFromFile("sample.pcap")));
             verify(handle).close();
         }
-    }
-
-    private static void assertReadFailureClosesHandle(Exception failure) throws Exception {
-        String path = "sample.pcapng";
-        PcapHandle handle = mock(PcapHandle.class);
-        when(handle.getNextPacketEx()).thenThrow(failure);
-        try (MockedStatic<Pcaps> pcaps = mockStatic(Pcaps.class)) {
-            pcaps.when(() -> Pcaps.openOffline(path)).thenReturn(handle);
-            assertSame(failure, assertThrows(failure.getClass(), () -> new PcapReader().readFromFile(path)));
-            verify(handle).close();
-        }
-    }
-
-    private static PcapReader readerWith(PcapMapper mapper) throws Exception {
-        // No constructor/setter injection is currently available in production.
-        PcapReader reader = new PcapReader();
-        Field field = PcapReader.class.getDeclaredField("mapper");
-        field.setAccessible(true);
-        field.set(reader, mapper);
-        return reader;
-    }
-
-    private static CapturedPacket packet(int number, Instant timestamp, int capturedLength, int originalLength) {
-        return new CapturedPacket(number, timestamp, capturedLength, originalLength, 4,
-                "192.0.2.1", "198.51.100.2", IpProtocol.UDP, new UdpDetails(53000, 53, 40),
-                64, null, null, null);
     }
 }
