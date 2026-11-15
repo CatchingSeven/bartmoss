@@ -1,4 +1,5 @@
 package io.github.catchingseven.bartmoss.processing;
+
 import java.io.EOFException;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -14,15 +15,16 @@ import org.pcap4j.packet.Packet;
 import io.github.catchingseven.bartmoss.domain.Capture;
 import io.github.catchingseven.bartmoss.domain.CapturedPacket;
 import io.github.catchingseven.bartmoss.domain.FileFormat;
+
 /*Application calls PcapReader, which uses PacketMapper and returns a Capture.
 Application passes that Capture to CaptureJsonSerializer.
 Application receives the JSON and coordinates Persistence and Integration.*/
 public class PcapReader {
     private PcapMapper mapper;
     private Capture capture;
-    
 
-    public Capture readFromFile(String filePath) throws EOFException, TimeoutException, NotOpenException{
+    public Capture readFromFile(String filePath)
+            throws EOFException, TimeoutException, NotOpenException, PcapNativeException {
         PcapHandle handle;
         mapper = new PcapMapper();
         capture = new Capture(0, "", null);
@@ -30,74 +32,66 @@ public class PcapReader {
             handle = Pcaps.openOffline(filePath);
             // fill in capture details
             String fileName = extractFileName(filePath);
+            // TODO: Implement dynamic captureIds
             capture.setCaptureId(1);
             capture.setSourceFileName(fileName);
             capture.setFileFormat(detectFileFormat(fileName));
 
-           
-           try {
-            int packetNumber = 0;
-            while (true){
-                Packet packet = handle.getNextPacketEx(); 
-                int capturedLength = packet.length();
-                int originalLength = handle.getOriginalLength();
-                Instant timestamp = handle.getTimestamp().toInstant();
-                Optional<CapturedPacket> capturedPacket = mapper.mapPacket(packet, timestamp, packetNumber, capturedLength, originalLength);
+            try {
+                int packetNumber = 0;
+                while (true) {
+                    Packet packet = handle.getNextPacketEx();
+                    int capturedLength = packet.length();
+                    int originalLength = handle.getOriginalLength();
+                    Instant timestamp = handle.getTimestamp().toInstant();
+                    Optional<CapturedPacket> capturedPacket = mapper.mapPacket(packet, timestamp, packetNumber,
+                            capturedLength, originalLength);
 
-                if (capturedPacket.isPresent()){
-                    capture.getPackets().add(capturedPacket.get());
+                    if (capturedPacket.isPresent()) {
+                        capture.getPackets().add(capturedPacket.get());
+                    }
+                    packetNumber++;
+
                 }
-                packetNumber++;
-                
-                
+
+            } catch (EOFException e) {
+
+            } finally {
+                handle.close();
             }
-            
-           } catch (EOFException e){
 
-           } finally {
-            handle.close();
-           }
-
-
-           
-            
         } catch (PcapNativeException e) {
             System.err.println("Unable to open capture: " + e.getMessage());
+            throw e;
         }
 
-        
-        
-        
         return capture;
     }
 
-    public Capture getCapture(){
+    public Capture getCapture() {
         return capture;
     }
 
+    /*
+     * Helpers us3d to extract the file name and file format for creating Capture
+     * object
+     */
 
-
-    /*Helpers us3d to extract the file name and file format for creating Capture object */
-
-
-    private static String extractFileName(String filePath){
+    private static String extractFileName(String filePath) {
         return Path.of(filePath).getFileName().toString();
     }
 
-    private static FileFormat detectFileFormat(String fileName){
+    private static FileFormat detectFileFormat(String fileName) {
         String name = fileName.toLowerCase();
 
-        if (name.endsWith(".pcapng")){
+        if (name.endsWith(".pcapng")) {
             return FileFormat.PCAPNG;
-        }
-        else if (name.endsWith(".pcap")) {
+        } else if (name.endsWith(".pcap")) {
             return FileFormat.PCAP;
         }
 
         return null;
 
     }
-
-
 
 }

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.concurrent.StructuredTaskScope.TimeoutException;
 
 import org.pcap4j.core.NotOpenException;
+import org.pcap4j.core.PcapNativeException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -30,7 +31,8 @@ public class Application {
     }
 
     public void handleUpload(String pathToFile)
-            throws EOFException, JsonProcessingException, NotOpenException, java.util.concurrent.TimeoutException {
+            throws EOFException, JsonProcessingException, NotOpenException, PcapNativeException,
+            java.util.concurrent.TimeoutException {
         reader.readFromFile(pathToFile);
         json = converter.convertToJson(reader.getCapture());
 
